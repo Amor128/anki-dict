@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "anki-dict"
+version = "0.1.0"
+description = "An anki add-on"
+authors = ["Ermao <yangshifeng19@qq.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "^2.32.3"
+bs4 = "^0.0.2"
+mypy = "^1.11.2"
+aqt = {extras = ["qt6"], version = "^24.6.3"}
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
