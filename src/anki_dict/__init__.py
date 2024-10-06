@@ -31,22 +31,21 @@ def paste_word_info(editor: Editor) -> None:
         try:
             word_info = consult_dict.consult_free_dict_api(word)
             note["IPA"] = word_info.ipa
-            note["Meaning"] = note["Meaning"] + \
-                word_info.get_en_meanings_html()
+            note["Meaning"] = word_info.get_en_meanings_html()
         except Exception:
             logging.error("Failed to get the information of the word '%s'", word)
 
     def fetch_examples(word, note):
         try:
             examples_html = consult_dict.consult_skell_api(word)
-            note["Example"] = note["Example"] + examples_html
+            note["Example"] = examples_html
         except Exception:
             logging.error("Failed to get the examples of the word '%s'", word)
 
     def fetch_collocation(word, note):
         try:
             collocation = consult_dict.consult_ozdict_api(word)
-            note["Collocation"] = note["Collocation"] + collocation
+            note["Collocation"] = collocation
         except Exception:
             logging.error("Failed to get the collocation of the word '%s'", word)
 

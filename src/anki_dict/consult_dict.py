@@ -12,6 +12,9 @@ class Meaning:
 
 
 class Word:
+
+    PART_OF_SPEECH_STYLE = "<span style='color:gray; font-weight:bold; font-style:italic;'>{}</span>"
+
     def __init__(self, word_str: str, ipa: str, en_meanings: list[Meaning], cn_meanings: list[Meaning],
                  examples: list, synonyms: list, antonyms: list):
         self.word = word_str
@@ -31,12 +34,74 @@ class Word:
         return: the meanings in HTML format
         """
         html = ""
-        # using <ul> to wrap the meanings and replace the special characters
-        html += "<ul>"
+        # group the meanings by part of speech and add sub-lists for each part of speech
+        meanings_dict = {}
         for meaning in self.en_meanings:
-            html += f"<li>{meaning.part_of_speech}: {meaning.definition}</li>"
-        html += "</ul>"
+            part_of_speech = meaning.part_of_speech
+            if part_of_speech not in meanings_dict:
+                meanings_dict[part_of_speech] = []
+            meanings_dict[part_of_speech].append(meaning.definition)
+        # iterate through the meanings_dict to create the HTML
+        for part_of_speech, definitions in meanings_dict.items():
+            part_of_speech_html = self.PART_OF_SPEECH_STYLE.format(part_of_speech)
+            definitions_html = "<ul>"
+            for definition in definitions[:3]:
+                definitions_html += f"<li>{definition}</li>"
+            definitions_html += "</ul>"
+            html += f'<p>{part_of_speech_html}{definitions_html}</p>'
         return html
+
+
+class Example:
+
+    # with red font color, bold
+    KWIC_STYLE = "<span style='color:red; font-weight:bold;'>{}</span>"
+
+    def __init__(self, kwic: str, example: str, translation: str):
+        self.kwic = kwic
+        self.example = example
+        self.translation = translation
+
+    def __repr__(self):
+        return f"Example({self.kwic}, {self.example}, {self.translation})"
+
+    def get_html(self) -> str:
+        """
+        Get the example in HTML format
+        return: the example in HTML format
+        """
+        # find the kwic in the example and replace it with the red font color
+        kwic = self.kwic.strip()
+        example_html = self.example.replace(
+            kwic, self.KWIC_STYLE.format(kwic))
+        return f"<p>{example_html}</p>"
+
+    # Getter and Setter for kwic
+    @property
+    def kwic(self):
+        return self._kwic
+
+    @kwic.setter
+    def kwic(self, value):
+        self._kwic = value
+
+    # Getter and Setter for example
+    @property
+    def example(self):
+        return self._example
+
+    @example.setter
+    def example(self, value):
+        self._example = value
+
+    # Getter and Setter for translation
+    @property
+    def translation(self):
+        return self._translation
+
+    @translation.setter
+    def translation(self, value):
+        self._translation = value
 
 
 def consult_free_dict_api(word: str) -> Word:
@@ -114,7 +179,8 @@ def consult_ozdict_api(word: str) -> str:
 
 
 def consult_skell_api(word: str) -> str:
-    response = requests.get(f"https://skell.sketchengine.eu/api/concordance?query={word}&lang=English&format=json", timeout=10)
+    response = requests.get(
+        f"https://skell.sketchengine.eu/api/concordance?query={word}&lang=English&format=json", timeout=10)
     if response.status_code != 200:
         raise requests.exceptions.RequestException(
             f"Failed to get the information of the word '{word}' from Skell")
@@ -126,25 +192,29 @@ def consult_skell_api(word: str) -> str:
             f"Failed to get the information of the word '{word}' from Skell")
     for line in data["Lines"]:
         line_str = ""
+        example = Example(None, None, None)
         left = line["Left"]
         if left and left[0]:
             line_str += left[0]["Str"]
         kwic = line["Kwic"]
         if kwic and kwic[0]:
             line_str += kwic[0]["Str"]
+            example.kwic = kwic[0]["Str"]
         right = line["Right"]
         if right and right[0]:
             line_str += right[0]["Str"]
-        example_lines.append(line_str)
-    # return the first 5 examples in thml format using <ul>
+        example.example = line_str
+        example_lines.append(example)
+    # return the first 3 examples in thml format using <ul>
     example_html = "<ul>"
-    for line in example_lines[:5]:
-        example_html += f"<li>{line}</li>"
+    for example in example_lines[:3]:
+        line_html = example.get_html()
+        example_html += f"<li>{line_html}</li>"
     example_html += "</ul>"
     return example_html
 
 
 if __name__ == "__main__":
     test_word = "example"
-    word_info = consult_skell_api(test_word)
-    print(word_info)
+    word_info = consult_free_dict_api(test_word)
+    print(word_info.get_en_meanings_html())
